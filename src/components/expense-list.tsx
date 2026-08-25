@@ -12,11 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { sortExpensesNewestFirst } from "@/lib/expenses";
+import { formatAmount } from "@/lib/format";
 import { useLedgerStore } from "@/store/ledger-store";
-
-function formatAmount(amount: number): string {
-  return amount.toFixed(2);
-}
 
 function formatDate(isoDate: string): string {
   const parsed = new Date(isoDate);
@@ -53,14 +50,14 @@ export function ExpenseList() {
       <CardContent>
         {isHydrated && ordered.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No expenses yet. Record the first one above.
+            No expenses yet. Use Add expense to record the first one.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
             {ordered.map((expense) => (
               <li
                 key={expense.id}
-                className="flex flex-col gap-2 rounded-lg border border-border p-3"
+                className="flex flex-col gap-2 rounded-xl border border-border bg-muted/30 p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

@@ -24,7 +24,12 @@ import { todayInputValue, type ExpenseDraft } from "@/lib/expenses";
 import { useLedgerStore } from "@/store/ledger-store";
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/types";
 
-export function ExpenseForm() {
+type ExpenseFormProps = {
+  embedded?: boolean;
+  onSaved?: () => void;
+};
+
+export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
   const errorId = useId();
   const amountId = useId();
   const descriptionId = useId();
@@ -121,20 +126,13 @@ export function ExpenseForm() {
     if (!nextError) {
       resetForm();
       event.currentTarget.reset();
+      onSaved?.();
     }
   }
 
   const canSubmit = members.length > 0;
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Add expense</CardTitle>
-        <CardDescription>
-          Record what was spent. Balances come in a later stage.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+  const form = (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
             <Label htmlFor={amountId}>Amount</Label>
@@ -320,7 +318,21 @@ export function ExpenseForm() {
             Save expense
           </Button>
         </form>
-      </CardContent>
+  );
+
+  if (embedded) {
+    return form;
+  }
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Add expense</CardTitle>
+        <CardDescription>
+          Record what was spent. It is saved on this device.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>{form}</CardContent>
     </Card>
   );
 }

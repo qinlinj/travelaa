@@ -50,7 +50,7 @@ export function MembersSection() {
       <CardHeader>
         <CardTitle>Members</CardTitle>
         <CardDescription>
-          Add people by name. No login is required.
+          Add or remove people on this trip. No login is required.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

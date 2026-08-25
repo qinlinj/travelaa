@@ -2,7 +2,7 @@ import { LedgerDashboard } from "@/components/ledger-dashboard";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col bg-background px-4 py-6 text-foreground sm:px-6 sm:py-8">
+    <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col bg-background px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-foreground sm:px-6 sm:pt-8">
       <LedgerDashboard />
     </main>
   );

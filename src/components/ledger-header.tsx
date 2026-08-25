@@ -46,10 +46,15 @@ export function LedgerHeader() {
           value={ledger.title}
           onChange={(event) => setTitle(event.target.value)}
           onBlur={handleTitleBlur}
-          className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            }
+          }}
+          className="-mx-1 w-full rounded-lg bg-transparent px-1 text-3xl font-semibold tracking-tight text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <p className="text-sm text-muted-foreground">
-          Shared trip ledger. Edit the title anytime.
+          Tap the title to rename this trip.
         </p>
       </div>
 

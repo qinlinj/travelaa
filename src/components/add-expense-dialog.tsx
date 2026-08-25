@@ -1,26 +1,22 @@
 "use client";
 
-import { useState } from "react";
-
 import { ExpenseForm } from "@/components/expense-form";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
-export function AddExpenseDialog() {
-  const [open, setOpen] = useState(false);
+type AddExpenseDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
 
+export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button">Add expense</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add expense</DialogTitle>
@@ -28,7 +24,7 @@ export function AddExpenseDialog() {
             Record what was spent. It is saved on this device.
           </DialogDescription>
         </DialogHeader>
-        <ExpenseForm embedded onSaved={() => setOpen(false)} />
+        <ExpenseForm embedded onSaved={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

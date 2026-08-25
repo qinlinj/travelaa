@@ -73,7 +73,7 @@ export function MembersSection() {
               {error}
             </p>
           ) : null}
-          <Button type="submit" className="w-full sm:w-auto">
+          <Button type="submit" className="min-h-11 w-full sm:w-auto">
             Add member
           </Button>
         </form>
@@ -89,7 +89,7 @@ export function MembersSection() {
             {members.map((member) => (
               <li
                 key={member.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
               >
                 <span className="min-w-0 truncate font-medium">
                   {member.name}
@@ -98,6 +98,7 @@ export function MembersSection() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="min-h-11 px-4"
                   onClick={() => handleRemove(member.id)}
                 >
                   Remove

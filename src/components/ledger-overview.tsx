@@ -45,7 +45,7 @@ export function LedgerOverview() {
 
         {breakdown.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No expenses yet. Add one to see the category breakdown.
+            No expenses yet. Tap Add expense to see the category breakdown.
           </p>
         ) : (
           <div className="flex flex-col gap-2">

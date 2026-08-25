@@ -50,7 +50,7 @@ export function ExpenseList() {
       <CardContent>
         {isHydrated && ordered.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No expenses yet. Use Add expense to record the first one.
+            No expenses yet. Tap Add expense to record the first one.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
@@ -86,7 +86,7 @@ export function ExpenseList() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="self-start"
+                  className="min-h-11 self-start px-4"
                   onClick={() => deleteExpense(expense.id)}
                 >
                   Delete

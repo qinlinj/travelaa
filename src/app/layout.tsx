@@ -26,7 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={cn("font-sans", geistSans.variable, geistMono.variable)}
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased pb-[env(safe-area-inset-bottom)]">
+        {children}
+      </body>
     </html>
   );
 }

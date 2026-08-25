@@ -53,4 +53,42 @@ describe("createLedgerStore", () => {
     expect(store.getState().ledger.members).toEqual(members);
     expect(data[LEDGER_STORAGE_KEY]).toContain("Kyoto");
   });
+
+  it("adds a member and persists the ledger", () => {
+    const data: Record<string, string> = {};
+    const storage = {
+      getItem: (key: string) => data[key] ?? null,
+      setItem: (key: string, value: string) => {
+        data[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete data[key];
+      },
+    };
+    const store = createLedgerStore(storage);
+
+    expect(store.getState().addMember("  Alice  ")).toBeNull();
+    expect(store.getState().ledger.members).toEqual([
+      expect.objectContaining({ name: "Alice" }),
+    ]);
+    expect(data[LEDGER_STORAGE_KEY]).toContain("Alice");
+  });
+
+  it("does not persist a rejected member name", () => {
+    const data: Record<string, string> = {};
+    const storage = {
+      getItem: (key: string) => data[key] ?? null,
+      setItem: (key: string, value: string) => {
+        data[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete data[key];
+      },
+    };
+    const store = createLedgerStore(storage);
+
+    expect(store.getState().addMember("   ")).toBe("Enter a member name.");
+    expect(store.getState().ledger.members).toEqual([]);
+    expect(data[LEDGER_STORAGE_KEY]).toBeUndefined();
+  });
 });

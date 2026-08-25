@@ -1,13 +1,15 @@
-import { Button } from "@/components/ui/button";
+import { MembersSection } from "@/components/members-section";
 
 export default function Home() {
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background p-6 text-foreground">
-      <h1 className="text-3xl font-semibold tracking-tight">TravelAA</h1>
-      <p className="text-muted-foreground">
-        This is TravelAA. Stage 1 scaffold is ready.
-      </p>
-      <Button type="button">Get started</Button>
+    <main className="mx-auto flex min-h-svh w-full max-w-md flex-col gap-6 bg-background px-4 py-8 text-foreground sm:px-6">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-3xl font-semibold tracking-tight">TravelAA</h1>
+        <p className="text-sm text-muted-foreground">
+          Add people to this trip. Expense recording comes later.
+        </p>
+      </header>
+      <MembersSection />
     </main>
   );
 }

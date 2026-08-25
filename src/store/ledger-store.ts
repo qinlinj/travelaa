@@ -13,6 +13,11 @@ import {
   type StorageLike,
 } from "@/lib/ledger-storage";
 import {
+  addExpense as addExpenseToLedger,
+  deleteExpense as deleteExpenseFromLedger,
+  type ExpenseDraft,
+} from "@/lib/expenses";
+import {
   addMember as addMemberToList,
   removeMember as removeMemberFromLedger,
 } from "@/lib/members";
@@ -25,6 +30,8 @@ export type LedgerStore = {
   setTitle: (title: string) => void;
   addMember: (name: string) => string | null;
   removeMember: (memberId: string) => string | null;
+  addExpense: (draft: ExpenseDraft) => string | null;
+  deleteExpense: (expenseId: string) => string | null;
   replaceMembers: (members: Member[]) => void;
   replaceExpenses: (expenses: Expense[]) => void;
   replaceLedger: (ledger: Ledger) => void;
@@ -65,6 +72,28 @@ export function createLedgerStore(
       }
 
       const ledger = { ...get().ledger, members: result.members };
+      saveLedger(ledger, storage);
+      set({ ledger });
+      return null;
+    },
+    addExpense(draft) {
+      const result = addExpenseToLedger(get().ledger, draft);
+      if (!result.ok) {
+        return result.error;
+      }
+
+      const ledger = { ...get().ledger, expenses: result.expenses };
+      saveLedger(ledger, storage);
+      set({ ledger });
+      return null;
+    },
+    deleteExpense(expenseId) {
+      const result = deleteExpenseFromLedger(get().ledger, expenseId);
+      if (!result.ok) {
+        return result.error;
+      }
+
+      const ledger = { ...get().ledger, expenses: result.expenses };
       saveLedger(ledger, storage);
       set({ ledger });
       return null;

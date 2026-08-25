@@ -91,4 +91,40 @@ describe("createLedgerStore", () => {
     expect(store.getState().ledger.members).toEqual([]);
     expect(data[LEDGER_STORAGE_KEY]).toBeUndefined();
   });
+
+  it("adds and deletes an expense through the store", () => {
+    const data: Record<string, string> = {};
+    const storage = {
+      getItem: (key: string) => data[key] ?? null,
+      setItem: (key: string, value: string) => {
+        data[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete data[key];
+      },
+    };
+    const store = createLedgerStore(storage);
+
+    store.getState().addMember("Alice");
+    const payerId = store.getState().ledger.members[0]!.id;
+
+    expect(
+      store.getState().addExpense({
+        amount: 25,
+        description: "Museum",
+        category: "Ticket",
+        date: "2026-08-21",
+        paidBy: payerId,
+        participants: [payerId],
+        splitType: "equal",
+      }),
+    ).toBeNull();
+    expect(store.getState().ledger.expenses).toHaveLength(1);
+    expect(data[LEDGER_STORAGE_KEY]).toContain("Museum");
+
+    const expenseId = store.getState().ledger.expenses[0]!.id;
+    expect(store.getState().deleteExpense(expenseId)).toBeNull();
+    expect(store.getState().ledger.expenses).toEqual([]);
+    expect(data[LEDGER_STORAGE_KEY]).not.toContain("Museum");
+  });
 });

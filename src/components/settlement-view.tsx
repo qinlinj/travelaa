@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-import { SettlementPaths } from "@/components/settlement-paths";
+import { SettlementTransferRows } from "@/components/settlement-transfer-rows";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,9 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { computeBalances } from "@/lib/balances";
-import { formatAmount, formatSignedAmount } from "@/lib/format";
-import { memberNamesById } from "@/lib/settlement-graph";
-import { settleBalances } from "@/lib/settlement";
+import { formatAmount, formatSignedAmount, memberNamesById } from "@/lib/format";
+import { settleBalances, settlementHeadline } from "@/lib/settlement";
 import { useLedgerStore } from "@/store/ledger-store";
 
 function netClassName(net: number): string {
@@ -39,7 +38,8 @@ export function SettlementView() {
   const summary = computeBalances(ledger);
   const plan = settleBalances(summary.balances);
   const names = memberNamesById(ledger.members);
-  const hasTransfers = plan.before.length > 0 || plan.after.length > 0;
+  const headline = settlementHeadline(plan.reducedFrom, plan.reducedTo);
+  const reduced = plan.reducedFrom > plan.reducedTo;
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +47,7 @@ export function SettlementView() {
         <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
           TravelAA
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="min-h-11">
           <Link href="/">Back to ledger</Link>
         </Button>
       </div>
@@ -55,7 +55,8 @@ export function SettlementView() {
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">Settle up</h1>
         <p className="text-sm text-muted-foreground">
-          See the messy original routes, then the simplified path.
+          Compare the naive routes with the greedy path. Who pays whom stays
+          readable either way.
         </p>
       </header>
 
@@ -101,20 +102,13 @@ export function SettlementView() {
         aria-labelledby="reduction-heading"
         className="rounded-xl border border-border bg-card px-4 py-5 text-center"
       >
-        <p
+        <h2
           id="reduction-heading"
-          className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase"
+          className="text-xl font-semibold tracking-tight text-balance"
         >
-          Transactions reduced from
-        </p>
-        <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
-          {plan.reducedFrom} to {plan.reducedTo}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {hasTransfers
-            ? "Fewer arrows mean a simpler way to settle."
-            : "No transfers are required right now."}
-        </p>
+          {headline.title}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{headline.subtitle}</p>
       </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -126,12 +120,7 @@ export function SettlementView() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SettlementPaths
-              transfers={plan.before}
-              names={names}
-              messy
-              variant="before"
-            />
+            <SettlementTransferRows transfers={plan.before} names={names} />
           </CardContent>
         </Card>
 
@@ -139,15 +128,13 @@ export function SettlementView() {
           <CardHeader>
             <CardTitle>After</CardTitle>
             <CardDescription>
-              Greedy path — largest debts meet largest credits first.
+              {reduced
+                ? "Greedy path — largest debts meet largest credits first."
+                : "Greedy path — largest debts meet largest credits first. Same count as the naive routes."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SettlementPaths
-              transfers={plan.after}
-              names={names}
-              variant="after"
-            />
+            <SettlementTransferRows transfers={plan.after} names={names} />
           </CardContent>
         </Card>
       </div>
@@ -155,36 +142,12 @@ export function SettlementView() {
       <Card>
         <CardHeader>
           <CardTitle>Optimal path</CardTitle>
-          <CardDescription>Who pays whom how much after simplification.</CardDescription>
+          <CardDescription>
+            Who pays whom how much after simplification.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {plan.after.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Everyone is already settled. No transfers needed.
-            </p>
-          ) : (
-            <ol className="flex flex-col gap-2">
-              {plan.after.map((transfer) => (
-                <li
-                  key={`${transfer.from}-${transfer.to}-${transfer.amount}`}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2"
-                >
-                  <p className="min-w-0 text-sm">
-                    <span className="font-medium">
-                      {names[transfer.from] ?? "Unknown"}
-                    </span>
-                    <span className="text-muted-foreground"> pays </span>
-                    <span className="font-medium">
-                      {names[transfer.to] ?? "Unknown"}
-                    </span>
-                  </p>
-                  <p className="tabular-nums font-semibold">
-                    {formatAmount(transfer.amount)}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          )}
+          <SettlementTransferRows transfers={plan.after} names={names} />
         </CardContent>
       </Card>
     </div>

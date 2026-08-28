@@ -15,6 +15,36 @@ export type SettlementPlan = {
   reducedTo: number;
 };
 
+export type SettlementHeadline = {
+  title: string;
+  subtitle: string;
+};
+
+export function settlementHeadline(
+  reducedFrom: number,
+  reducedTo: number,
+): SettlementHeadline {
+  if (reducedFrom === 0 && reducedTo === 0) {
+    return {
+      title: "Nothing to settle",
+      subtitle: "No transfers are required right now.",
+    };
+  }
+
+  if (reducedFrom > reducedTo) {
+    return {
+      title: `Transactions reduced from ${reducedFrom} to ${reducedTo}`,
+      subtitle: "Fewer payments mean a simpler way to settle.",
+    };
+  }
+
+  const paymentLabel = reducedTo === 1 ? "1 payment" : `${reducedTo} payments`;
+  return {
+    title: `Already the simplest path — ${paymentLabel}`,
+    subtitle: "Before and after use the same number of transfers.",
+  };
+}
+
 export function settleBalances(balances: MemberBalance[]): SettlementPlan {
   const before = naiveProportionalTransfers(balances);
   const after = greedyTransfers(balances);

@@ -143,6 +143,14 @@ describe("createLedgerStore", () => {
 
     expect(store.getState().deleteExpense(expenseId)).toBeNull();
     expect(store.getState().ledger.expenses).toEqual([]);
-    expect(data[LEDGER_STORAGE_KEY]).not.toContain("Museum");
+    expect(data[LEDGER_STORAGE_KEY]).not.toContain("Museum tickets");
+
+    expect(store.getState().restoreDeletedExpense()).toBeNull();
+    expect(store.getState().ledger.expenses[0]).toMatchObject({
+      id: expenseId,
+      description: "Museum tickets",
+      amount: 30,
+    });
+    expect(data[LEDGER_STORAGE_KEY]).toContain("Museum tickets");
   });
 });

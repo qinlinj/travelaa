@@ -10,8 +10,8 @@ type AddExpenseFabProps = {
 
 export function AddExpenseFab({ onClick }: AddExpenseFabProps) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40">
-      <div className="mx-auto flex max-w-2xl justify-end px-4 sm:px-6">
+    <div className="pointer-events-none fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-full max-w-2xl -translate-x-1/2 px-4 sm:px-6">
+      <div className="flex justify-end">
         <Button
           type="button"
           onClick={onClick}

@@ -15,6 +15,7 @@ import {
 import {
   addExpense as addExpenseToLedger,
   deleteExpense as deleteExpenseFromLedger,
+  insertExpenseAt,
   updateExpense as updateExpenseInLedger,
   type ExpenseDraft,
 } from "@/lib/expenses";
@@ -24,9 +25,15 @@ import {
 } from "@/lib/members";
 import type { Expense, Ledger, Member } from "@/types";
 
+export type DeletedExpense = {
+  expense: Expense;
+  index: number;
+};
+
 export type LedgerStore = {
   ledger: Ledger;
   isHydrated: boolean;
+  deletedExpense: DeletedExpense | null;
   hydrate: () => void;
   setTitle: (title: string) => void;
   addMember: (name: string) => string | null;
@@ -34,6 +41,8 @@ export type LedgerStore = {
   addExpense: (draft: ExpenseDraft) => string | null;
   updateExpense: (expenseId: string, draft: ExpenseDraft) => string | null;
   deleteExpense: (expenseId: string) => string | null;
+  restoreDeletedExpense: () => string | null;
+  dismissDeletedExpense: () => void;
   replaceMembers: (members: Member[]) => void;
   replaceExpenses: (expenses: Expense[]) => void;
   replaceLedger: (ledger: Ledger) => void;
@@ -45,6 +54,7 @@ export function createLedgerStore(
   return create<LedgerStore>((set, get) => ({
     ledger: createEmptyLedger(),
     isHydrated: false,
+    deletedExpense: null,
     hydrate() {
       set({
         ledger: loadLedger(storage) ?? get().ledger,
@@ -101,15 +111,40 @@ export function createLedgerStore(
       return null;
     },
     deleteExpense(expenseId) {
-      const result = deleteExpenseFromLedger(get().ledger, expenseId);
+      const current = get().ledger;
+      const index = current.expenses.findIndex(
+        (expense) => expense.id === expenseId,
+      );
+      const removed = current.expenses[index];
+      const result = deleteExpenseFromLedger(current, expenseId);
       if (!result.ok) {
         return result.error;
       }
 
-      const ledger = { ...get().ledger, expenses: result.expenses };
+      const ledger = { ...current, expenses: result.expenses };
       saveLedger(ledger, storage);
-      set({ ledger });
+      set({
+        ledger,
+        deletedExpense: removed ? { expense: removed, index } : null,
+      });
       return null;
+    },
+    restoreDeletedExpense() {
+      const deleted = get().deletedExpense;
+      if (!deleted) {
+        return "Nothing to undo.";
+      }
+
+      const ledger = withExpenses(
+        get().ledger,
+        insertExpenseAt(get().ledger.expenses, deleted.expense, deleted.index),
+      );
+      saveLedger(ledger, storage);
+      set({ ledger, deletedExpense: null });
+      return null;
+    },
+    dismissDeletedExpense() {
+      set({ deletedExpense: null });
     },
     replaceMembers(members) {
       const ledger = withMembers(get().ledger, members);

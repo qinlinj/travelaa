@@ -182,6 +182,17 @@ export function updateExpense(
   return { ok: true, expenses };
 }
 
+export function insertExpenseAt(
+  expenses: Expense[],
+  expense: Expense,
+  index: number,
+): Expense[] {
+  const next = expenses.filter((item) => item.id !== expense.id);
+  const insertAt = Math.min(Math.max(index, 0), next.length);
+  next.splice(insertAt, 0, expense);
+  return next;
+}
+
 export function deleteExpense(
   ledger: Ledger,
   expenseId: string,

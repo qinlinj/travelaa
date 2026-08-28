@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,56 +43,35 @@ type ExpenseListProps = {
   onEdit: (expense: Expense) => void;
 };
 
-type UndoState = {
-  expense: Expense;
-  index: number;
-};
-
 export function ExpenseList({ onEdit }: ExpenseListProps) {
   const members = useLedgerStore((state) => state.ledger.members);
   const expenses = useLedgerStore((state) => state.ledger.expenses);
   const isHydrated = useLedgerStore((state) => state.isHydrated);
+  const deletedExpense = useLedgerStore((state) => state.deletedExpense);
   const hydrate = useLedgerStore((state) => state.hydrate);
   const deleteExpense = useLedgerStore((state) => state.deleteExpense);
-  const replaceExpenses = useLedgerStore((state) => state.replaceExpenses);
-
-  const [undo, setUndo] = useState<UndoState | null>(null);
+  const restoreDeletedExpense = useLedgerStore(
+    (state) => state.restoreDeletedExpense,
+  );
+  const dismissDeletedExpense = useLedgerStore(
+    (state) => state.dismissDeletedExpense,
+  );
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   useEffect(() => {
-    if (!undo) {
+    if (!deletedExpense) {
       return;
     }
 
-    const timeout = window.setTimeout(() => setUndo(null), 5000);
+    const timeout = window.setTimeout(() => dismissDeletedExpense(), 8000);
     return () => window.clearTimeout(timeout);
-  }, [undo]);
+  }, [deletedExpense, dismissDeletedExpense]);
 
   function memberName(memberId: string): string {
     return members.find((member) => member.id === memberId)?.name ?? "Unknown";
-  }
-
-  function handleDelete(expense: Expense) {
-    const index = expenses.findIndex((item) => item.id === expense.id);
-    const error = deleteExpense(expense.id);
-    if (!error && index !== -1) {
-      setUndo({ expense, index });
-    }
-  }
-
-  function handleUndo() {
-    if (!undo) {
-      return;
-    }
-
-    const next = [...useLedgerStore.getState().ledger.expenses];
-    const insertAt = Math.min(undo.index, next.length);
-    next.splice(insertAt, 0, undo.expense);
-    replaceExpenses(next);
-    setUndo(null);
   }
 
   const ordered = sortExpensesNewestFirst(expenses);
@@ -145,7 +124,7 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
                       variant="outline"
                       size="sm"
                       className="min-h-11 self-start px-4"
-                      onClick={() => handleDelete(expense)}
+                      onClick={() => deleteExpense(expense.id)}
                     >
                       Delete
                     </Button>
@@ -157,17 +136,20 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
         )}
       </CardContent>
 
-      {undo ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[max(5.75rem,calc(4.75rem+env(safe-area-inset-bottom)))] z-40">
-          <div className="mx-auto flex max-w-2xl justify-start px-4 sm:px-6">
-            <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background shadow-lg">
+      {deletedExpense ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[max(5.75rem,calc(4.75rem+env(safe-area-inset-bottom)))] z-50">
+          <div className="mx-auto flex w-full max-w-2xl justify-start px-4 sm:px-6">
+            <div
+              role="status"
+              className="pointer-events-auto flex items-center gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background shadow-lg"
+            >
               <span>Expense deleted</span>
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 className="min-h-11"
-                onClick={handleUndo}
+                onClick={() => restoreDeletedExpense()}
               >
                 Undo
               </Button>

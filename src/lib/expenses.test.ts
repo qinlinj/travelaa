@@ -5,6 +5,7 @@ import {
   addExpense,
   customShareProgress,
   deleteExpense,
+  insertExpenseAt,
   sortExpensesNewestFirst,
   toDateInputValue,
   updateExpense,
@@ -211,6 +212,27 @@ describe("toDateInputValue", () => {
   it("turns a stored ISO date into a yyyy-mm-dd input value", () => {
     expect(toDateInputValue("2026-08-28T00:00:00.000Z")).toBe("2026-08-28");
     expect(toDateInputValue("2026-08-28")).toBe("2026-08-28");
+  });
+});
+
+describe("insertExpenseAt", () => {
+  it("puts a deleted expense back at its original index", () => {
+    const first: Expense = {
+      id: "exp-1",
+      amount: 12,
+      description: "Coffee",
+      category: "Food",
+      date: "2026-08-20T00:00:00.000Z",
+      paidBy: "m1",
+      participants: ["m1"],
+      splitType: "equal",
+    };
+    const second: Expense = { ...first, id: "exp-2", description: "Taxi" };
+
+    expect(insertExpenseAt([second], first, 0).map((item) => item.id)).toEqual([
+      "exp-1",
+      "exp-2",
+    ]);
   });
 });
 

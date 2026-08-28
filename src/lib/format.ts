@@ -20,6 +20,23 @@ export function isDefaultLedgerTitle(title: string): boolean {
   return title.trim().toLowerCase() === DEFAULT_LEDGER_TITLE.toLowerCase();
 }
 
+export function formatExpenseDate(isoDate: string): string {
+  const match = isoDate.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) {
+    return isoDate;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const local = new Date(year, month - 1, day);
+  if (Number.isNaN(local.getTime())) {
+    return isoDate;
+  }
+
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(local);
+}
+
 export function memberNamesById(
   members: { id: string; name: string }[],
 ): Record<string, string> {

@@ -230,21 +230,21 @@ export function ExpenseForm({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="category">Category</Label>
-            <Select
+            <select
+              id="category"
+              name="expenseCategory"
               value={category}
-              onValueChange={(value) => setCategory(value as ExpenseCategory)}
+              onChange={(event) =>
+                setCategory(event.target.value as ExpenseCategory)
+              }
+              className="min-h-11 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <SelectTrigger id="category" className="min-h-11 w-full">
-                <SelectValue placeholder="Choose a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {EXPENSE_CATEGORIES.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {EXPENSE_CATEGORIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-2">

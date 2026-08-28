@@ -22,8 +22,6 @@ export function LedgerDashboard() {
     hydrate();
   }, [hydrate]);
 
-  const hasMembers = members.length > 0;
-
   function openAdd() {
     setEditing(null);
     setExpenseOpen(true);
@@ -37,12 +35,12 @@ export function LedgerDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <LedgerHeader />
-      {isHydrated && !hasMembers ? <MembersSection /> : null}
+      {isHydrated && members.length < 2 ? <MembersSection /> : null}
       <LedgerOverview />
-      <ExpenseList onEdit={openEdit} />
-      {isHydrated && hasMembers ? <MembersSection /> : null}
-
+      <ExpenseList onEdit={openEdit} onAdd={openAdd} />
       <AddExpenseFab onClick={openAdd} />
+      {isHydrated && members.length >= 2 ? <MembersSection /> : null}
+
       <AddExpenseDialog
         open={expenseOpen}
         onOpenChange={(open) => {

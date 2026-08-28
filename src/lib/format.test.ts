@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatAmount,
+  formatExpenseDate,
   formatSignedAmount,
   isDefaultLedgerTitle,
   memberCountLabel,
@@ -28,6 +29,13 @@ describe("isDefaultLedgerTitle", () => {
     expect(isDefaultLedgerTitle("Untitled ledger")).toBe(true);
     expect(isDefaultLedgerTitle("  untitled ledger  ")).toBe(true);
     expect(isDefaultLedgerTitle("Japan 2026")).toBe(false);
+  });
+});
+
+describe("formatExpenseDate", () => {
+  it("renders a calendar YYYY-MM-DD as that local day, not the UTC day before", () => {
+    expect(formatExpenseDate("2026-08-28")).toBe("Aug 28, 2026");
+    expect(formatExpenseDate("2026-08-28T00:00:00.000Z")).toBe("Aug 28, 2026");
   });
 });
 

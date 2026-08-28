@@ -138,18 +138,6 @@ export function SettlementView() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Optimal path</CardTitle>
-          <CardDescription>
-            Who pays whom how much after simplification.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SettlementTransferRows transfers={plan.after} names={names} />
-        </CardContent>
-      </Card>
     </div>
   );
 }

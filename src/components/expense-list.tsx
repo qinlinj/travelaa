@@ -12,18 +12,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { insertExpenseAt, sortExpensesNewestFirst } from "@/lib/expenses";
-import { formatAmount } from "@/lib/format";
+import { formatAmount, formatExpenseDate } from "@/lib/format";
 import { useLedgerStore } from "@/store/ledger-store";
 import type { Expense } from "@/types";
-
-function formatDate(isoDate: string): string {
-  const parsed = new Date(isoDate);
-  if (Number.isNaN(parsed.getTime())) {
-    return isoDate;
-  }
-
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(parsed);
-}
 
 function joinNames(names: string[]): string {
   if (names.length === 0) {
@@ -41,6 +32,7 @@ function joinNames(names: string[]): string {
 
 type ExpenseListProps = {
   onEdit: (expense: Expense) => void;
+  onAdd?: () => void;
 };
 
 type PendingUndo = {
@@ -48,7 +40,7 @@ type PendingUndo = {
   index: number;
 };
 
-export function ExpenseList({ onEdit }: ExpenseListProps) {
+export function ExpenseList({ onEdit, onAdd }: ExpenseListProps) {
   const members = useLedgerStore((state) => state.ledger.members);
   const expenses = useLedgerStore((state) => state.ledger.expenses);
   const isHydrated = useLedgerStore((state) => state.isHydrated);
@@ -60,15 +52,6 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
-
-  useEffect(() => {
-    if (!pendingUndo) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => setPendingUndo(null), 8000);
-    return () => window.clearTimeout(timeout);
-  }, [pendingUndo]);
 
   function memberName(memberId: string): string {
     return members.find((member) => member.id === memberId)?.name ?? "Unknown";
@@ -97,16 +80,22 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Expenses</CardTitle>
-        <CardDescription>Newest dates appear first. Tap a row to edit.</CardDescription>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <CardTitle>Expenses</CardTitle>
+          <CardDescription>Newest dates appear first. Tap a row to edit.</CardDescription>
+        </div>
+        {onAdd ? (
+          <Button type="button" className="min-h-11" onClick={onAdd}>
+            Add expense
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {pendingUndo ? (
           <div
             role="status"
-            className="flex flex-col gap-2 rounded-xl bg-foreground px-3 py-3 text-sm text-background"
-            onClick={(event) => event.stopPropagation()}
+            className="sticky top-0 z-20 flex flex-col gap-2 rounded-xl bg-foreground px-3 py-3 text-sm text-background shadow-md"
           >
             <p>
               Deleted {pendingUndo.expense.description} (
@@ -115,12 +104,16 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
             <button
               type="button"
               className="min-h-11 w-full rounded-lg bg-background px-3 font-medium text-foreground"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleUndo();
-              }}
+              onClick={handleUndo}
             >
               Undo delete
+            </button>
+            <button
+              type="button"
+              className="min-h-11 w-full rounded-lg border border-background/40 px-3 font-medium"
+              onClick={() => setPendingUndo(null)}
+            >
+              Dismiss
             </button>
           </div>
         ) : null}
@@ -130,9 +123,7 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
             No expenses yet. Tap Add expense to record the first one.
           </p>
         ) : (
-          <ul
-            className={`flex flex-col gap-3 ${pendingUndo ? "pointer-events-none opacity-70" : ""}`}
-          >
+          <ul className="flex flex-col gap-3">
             {ordered.map((expense) => {
               const participantNames = expense.participants.map(memberName);
 
@@ -148,7 +139,7 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
                         <div className="min-w-0">
                           <p className="font-medium">{expense.description}</p>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(expense.date)}
+                            {formatExpenseDate(expense.date)}
                           </p>
                         </div>
                         <p className="text-base font-semibold tabular-nums">

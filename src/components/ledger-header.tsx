@@ -92,30 +92,32 @@ export function LedgerHeader() {
       </div>
 
       {hasExpenses ? (
-        <ul
-          aria-label="Who is ahead"
-          className="flex gap-2 overflow-x-auto pb-1"
-        >
-          {summary.balances.map((balance) => {
-            const name =
-              ledger.members.find((member) => member.id === balance.memberId)
-                ?.name ?? "Unknown";
+        <div className="relative">
+          <ul
+            aria-label="Who is ahead"
+            className="flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] md:[mask-image:none]"
+          >
+            {summary.balances.map((balance) => {
+              const name =
+                ledger.members.find((member) => member.id === balance.memberId)
+                  ?.name ?? "Unknown";
 
-            return (
-              <li
-                key={balance.memberId}
-                className="flex min-w-[7.5rem] shrink-0 items-baseline justify-between gap-3 rounded-full border border-border bg-card px-3 py-2"
-              >
-                <span className="truncate text-sm font-medium">{name}</span>
-                <span
-                  className={`text-sm font-semibold tabular-nums ${netClassName(balance.net)}`}
+              return (
+                <li
+                  key={balance.memberId}
+                  className="flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-3 rounded-full border border-border bg-card px-3"
                 >
-                  {formatSignedAmount(balance.net)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                  <span className="truncate text-sm font-medium">{name}</span>
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${netClassName(balance.net)}`}
+                  >
+                    {formatSignedAmount(balance.net)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : null}
     </header>
   );

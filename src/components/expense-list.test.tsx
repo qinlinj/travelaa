@@ -1,6 +1,6 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExpenseList } from "@/components/expense-list";
 import { useLedgerStore } from "@/store/ledger-store";
@@ -100,6 +100,34 @@ describe("ExpenseList undo", () => {
       "taxi",
     ]);
     expect(container.textContent).toContain("Taxi");
-    expect(container.textContent).not.toContain("Expense deleted");
+    expect(container.textContent).not.toContain("Deleted Taxi");
+  });
+
+  it("keeps the undo banner hittable for at least ten seconds", () => {
+    vi.useFakeTimers();
+
+    act(() => {
+      root.render(<ExpenseList onEdit={() => undefined} />);
+    });
+
+    const taxiRow = [...container.querySelectorAll("li")].find((item) =>
+      item.textContent?.includes("Taxi"),
+    );
+    const taxiDelete = [...(taxiRow?.querySelectorAll("button") ?? [])].find(
+      (button) => button.textContent === "Delete",
+    );
+
+    act(() => {
+      taxiDelete?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(container.textContent).toContain("Undo delete");
+    expect(container.textContent).toContain("Deleted Taxi");
+
+    vi.useRealTimers();
   });
 });

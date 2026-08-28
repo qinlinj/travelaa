@@ -56,6 +56,10 @@ export function createLedgerStore(
     isHydrated: false,
     deletedExpense: null,
     hydrate() {
+      if (get().isHydrated) {
+        return;
+      }
+
       set({
         ledger: loadLedger(storage) ?? get().ledger,
         isHydrated: true,

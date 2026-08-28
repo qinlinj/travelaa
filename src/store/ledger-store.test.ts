@@ -29,6 +29,10 @@ describe("createLedgerStore", () => {
 
     expect(store.getState().isHydrated).toBe(true);
     expect(store.getState().ledger).toEqual(stored);
+
+    store.getState().setTitle("Changed after hydrate");
+    store.getState().hydrate();
+    expect(store.getState().ledger.title).toBe("Changed after hydrate");
   });
 
   it("persists title, members, and expenses through the store", () => {

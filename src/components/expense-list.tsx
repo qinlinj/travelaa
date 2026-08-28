@@ -50,9 +50,6 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
   const deletedExpense = useLedgerStore((state) => state.deletedExpense);
   const hydrate = useLedgerStore((state) => state.hydrate);
   const deleteExpense = useLedgerStore((state) => state.deleteExpense);
-  const restoreDeletedExpense = useLedgerStore(
-    (state) => state.restoreDeletedExpense,
-  );
   const dismissDeletedExpense = useLedgerStore(
     (state) => state.dismissDeletedExpense,
   );
@@ -137,22 +134,22 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
       </CardContent>
 
       {deletedExpense ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[max(5.75rem,calc(4.75rem+env(safe-area-inset-bottom)))] z-50">
-          <div className="mx-auto flex w-full max-w-2xl justify-start px-4 sm:px-6">
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-50">
+          <div className="mx-auto flex w-full max-w-2xl justify-center px-4 sm:px-6">
             <div
               role="status"
               className="pointer-events-auto flex items-center gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background shadow-lg"
             >
               <span>Expense deleted</span>
-              <Button
+              <button
                 type="button"
-                variant="secondary"
-                size="sm"
-                className="min-h-11"
-                onClick={() => restoreDeletedExpense()}
+                className="min-h-11 rounded-lg bg-background px-3 font-medium text-foreground"
+                onClick={() => {
+                  useLedgerStore.getState().restoreDeletedExpense();
+                }}
               >
                 Undo
-              </Button>
+              </button>
             </div>
           </div>
         </div>

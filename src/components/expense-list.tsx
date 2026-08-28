@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { sortExpensesNewestFirst } from "@/lib/expenses";
+import { insertExpenseAt, sortExpensesNewestFirst } from "@/lib/expenses";
 import { formatAmount } from "@/lib/format";
 import { useLedgerStore } from "@/store/ledger-store";
 import type { Expense } from "@/types";
@@ -43,32 +43,54 @@ type ExpenseListProps = {
   onEdit: (expense: Expense) => void;
 };
 
+type PendingUndo = {
+  expense: Expense;
+  index: number;
+};
+
 export function ExpenseList({ onEdit }: ExpenseListProps) {
   const members = useLedgerStore((state) => state.ledger.members);
   const expenses = useLedgerStore((state) => state.ledger.expenses);
   const isHydrated = useLedgerStore((state) => state.isHydrated);
-  const deletedExpense = useLedgerStore((state) => state.deletedExpense);
   const hydrate = useLedgerStore((state) => state.hydrate);
   const deleteExpense = useLedgerStore((state) => state.deleteExpense);
-  const dismissDeletedExpense = useLedgerStore(
-    (state) => state.dismissDeletedExpense,
-  );
+  const replaceExpenses = useLedgerStore((state) => state.replaceExpenses);
+  const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   useEffect(() => {
-    if (!deletedExpense) {
+    if (!pendingUndo) {
       return;
     }
 
-    const timeout = window.setTimeout(() => dismissDeletedExpense(), 8000);
+    const timeout = window.setTimeout(() => setPendingUndo(null), 8000);
     return () => window.clearTimeout(timeout);
-  }, [deletedExpense, dismissDeletedExpense]);
+  }, [pendingUndo]);
 
   function memberName(memberId: string): string {
     return members.find((member) => member.id === memberId)?.name ?? "Unknown";
+  }
+
+  function handleDelete(expense: Expense) {
+    const index = expenses.findIndex((item) => item.id === expense.id);
+    const error = deleteExpense(expense.id);
+    if (!error && index !== -1) {
+      setPendingUndo({ expense, index });
+    }
+  }
+
+  function handleUndo() {
+    if (!pendingUndo) {
+      return;
+    }
+
+    replaceExpenses(
+      insertExpenseAt(expenses, pendingUndo.expense, pendingUndo.index),
+    );
+    setPendingUndo(null);
   }
 
   const ordered = sortExpensesNewestFirst(expenses);
@@ -79,8 +101,24 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
         <CardTitle>Expenses</CardTitle>
         <CardDescription>Newest dates appear first. Tap a row to edit.</CardDescription>
       </CardHeader>
-      <CardContent>
-        {isHydrated && ordered.length === 0 ? (
+      <CardContent className="flex flex-col gap-3">
+        {pendingUndo ? (
+          <div
+            role="status"
+            className="flex items-center justify-between gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background"
+          >
+            <span>Expense deleted</span>
+            <button
+              type="button"
+              className="min-h-11 rounded-lg bg-background px-3 font-medium text-foreground"
+              onClick={handleUndo}
+            >
+              Undo
+            </button>
+          </div>
+        ) : null}
+
+        {isHydrated && ordered.length === 0 && !pendingUndo ? (
           <p className="text-sm text-muted-foreground">
             No expenses yet. Tap Add expense to record the first one.
           </p>
@@ -121,7 +159,7 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
                       variant="outline"
                       size="sm"
                       className="min-h-11 self-start px-4"
-                      onClick={() => deleteExpense(expense.id)}
+                      onClick={() => handleDelete(expense)}
                     >
                       Delete
                     </Button>
@@ -132,28 +170,6 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
           </ul>
         )}
       </CardContent>
-
-      {deletedExpense ? (
-        <div className="pointer-events-none fixed inset-x-0 top-3 z-50">
-          <div className="mx-auto flex w-full max-w-2xl justify-center px-4 sm:px-6">
-            <div
-              role="status"
-              className="pointer-events-auto flex items-center gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background shadow-lg"
-            >
-              <span>Expense deleted</span>
-              <button
-                type="button"
-                className="min-h-11 rounded-lg bg-background px-3 font-medium text-foreground"
-                onClick={() => {
-                  useLedgerStore.getState().restoreDeletedExpense();
-                }}
-              >
-                Undo
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </Card>
   );
 }

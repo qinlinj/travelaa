@@ -81,13 +81,13 @@ describe("ExpenseList undo", () => {
       taxiDelete?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(container.textContent).toContain("Expense deleted");
+    expect(container.textContent).toContain("Deleted Taxi");
     expect(useLedgerStore.getState().ledger.expenses.map((item) => item.id)).toEqual([
       "hotel",
     ]);
 
     const undo = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Undo",
+      (button) => button.textContent === "Undo delete",
     );
     expect(undo).toBeTruthy();
 

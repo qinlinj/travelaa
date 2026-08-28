@@ -105,15 +105,22 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
         {pendingUndo ? (
           <div
             role="status"
-            className="flex items-center justify-between gap-3 rounded-xl bg-foreground px-3 py-2 text-sm text-background"
+            className="flex flex-col gap-2 rounded-xl bg-foreground px-3 py-3 text-sm text-background"
+            onClick={(event) => event.stopPropagation()}
           >
-            <span>Expense deleted</span>
+            <p>
+              Deleted {pendingUndo.expense.description} (
+              {formatAmount(pendingUndo.expense.amount)}).
+            </p>
             <button
               type="button"
-              className="min-h-11 rounded-lg bg-background px-3 font-medium text-foreground"
-              onClick={handleUndo}
+              className="min-h-11 w-full rounded-lg bg-background px-3 font-medium text-foreground"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleUndo();
+              }}
             >
-              Undo
+              Undo delete
             </button>
           </div>
         ) : null}
@@ -123,7 +130,9 @@ export function ExpenseList({ onEdit }: ExpenseListProps) {
             No expenses yet. Tap Add expense to record the first one.
           </p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul
+            className={`flex flex-col gap-3 ${pendingUndo ? "pointer-events-none opacity-70" : ""}`}
+          >
             {ordered.map((expense) => {
               const participantNames = expense.participants.map(memberName);
 

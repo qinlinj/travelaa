@@ -23,9 +23,7 @@ export function LedgerOverview() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Overview</CardTitle>
-        <CardDescription>
-          A quick look at spend so far on this trip.
-        </CardDescription>
+        <CardDescription>Spend so far on this trip.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
@@ -45,7 +43,7 @@ export function LedgerOverview() {
 
         {breakdown.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No expenses yet. Tap Add expense to see the category breakdown.
+            No expenses yet. Tap Add expense for a category breakdown.
           </p>
         ) : (
           <div className="flex flex-col gap-2">

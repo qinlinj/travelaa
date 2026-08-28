@@ -1,15 +1,3 @@
-"use client";
-
-import {
-  Bar,
-  BarChart,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
 import { formatAmount } from "@/lib/format";
 import type { CategoryTotal } from "@/lib/category-breakdown";
 
@@ -28,40 +16,38 @@ type CategoryChartProps = {
 };
 
 export function CategoryChart({ data }: CategoryChartProps) {
+  const maxAmount = data[0]?.amount ?? 0;
+
   return (
-    <div className="h-56 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 8, right: 8, left: 4, bottom: 0 }}
-        >
-          <XAxis type="number" hide />
-          <YAxis
-            type="category"
-            dataKey="category"
-            width={108}
-            tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <Tooltip
-            cursor={{ fill: "var(--muted)" }}
-            formatter={(value) => [
-              formatAmount(Number(value ?? 0)),
-              "Spent",
-            ]}
-          />
-          <Bar dataKey="amount" radius={[0, 6, 6, 0]} maxBarSize={22}>
-            {data.map((entry, index) => (
-              <Cell
-                key={entry.category}
-                fill={TRAVEL_CHART_COLORS[index % TRAVEL_CHART_COLORS.length]}
+    <ul className="flex flex-col gap-3">
+      {data.map((entry, index) => {
+        const width =
+          maxAmount > 0 ? Math.max((entry.amount / maxAmount) * 100, 4) : 0;
+
+        return (
+          <li key={entry.category} className="flex flex-col gap-1.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-sm font-medium">{entry.category}</span>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {formatAmount(entry.amount)} · {entry.percent}%
+              </span>
+            </div>
+            <div
+              className="h-3 overflow-hidden rounded-full bg-muted"
+              aria-hidden="true"
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${width}%`,
+                  backgroundColor:
+                    TRAVEL_CHART_COLORS[index % TRAVEL_CHART_COLORS.length],
+                }}
               />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

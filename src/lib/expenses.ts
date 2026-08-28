@@ -98,6 +98,90 @@ export function addExpense(
   };
 }
 
+export type CustomShareProgress = {
+  assigned: number;
+  target: number | null;
+  remaining: number;
+  balanced: boolean;
+};
+
+export function customShareProgress(
+  amountInput: number | string,
+  shares: Record<string, number | string> | undefined,
+  participantIds: string[],
+): CustomShareProgress {
+  const target = parseAmount(amountInput);
+  let assigned = 0;
+
+  for (const participantId of participantIds) {
+    const raw = shares?.[participantId];
+    const value = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(value) && value >= 0) {
+      assigned += value;
+    }
+  }
+
+  if (target === null) {
+    return {
+      assigned,
+      target: null,
+      remaining: 0,
+      balanced: false,
+    };
+  }
+
+  const remaining = target - assigned;
+  return {
+    assigned,
+    target,
+    remaining,
+    balanced: Math.abs(remaining) <= CUSTOM_SHARE_TOLERANCE,
+  };
+}
+
+export function toDateInputValue(isoDate: string): string {
+  const trimmed = isoDate.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    return trimmed.slice(0, 10);
+  }
+
+  const parsed = Date.parse(trimmed);
+  if (Number.isNaN(parsed)) {
+    return todayInputValue();
+  }
+
+  return todayInputValue(new Date(parsed));
+}
+
+export function updateExpense(
+  ledger: Ledger,
+  expenseId: string,
+  draft: ExpenseDraft,
+): ExpenseActionResult {
+  const index = ledger.expenses.findIndex((expense) => expense.id === expenseId);
+  if (index === -1) {
+    return { ok: false, error: "Expense not found." };
+  }
+
+  const withoutCurrent: Ledger = {
+    ...ledger,
+    expenses: ledger.expenses.filter((expense) => expense.id !== expenseId),
+  };
+  const created = addExpense(withoutCurrent, draft, expenseId);
+  if (!created.ok) {
+    return created;
+  }
+
+  const updated = created.expenses.find((expense) => expense.id === expenseId);
+  if (!updated) {
+    return { ok: false, error: "Expense not found." };
+  }
+
+  const expenses = [...ledger.expenses];
+  expenses[index] = updated;
+  return { ok: true, expenses };
+}
+
 export function deleteExpense(
   ledger: Ledger,
   expenseId: string,

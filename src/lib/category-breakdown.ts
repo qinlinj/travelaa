@@ -3,6 +3,7 @@ import type { Expense } from "@/types";
 export type CategoryTotal = {
   category: string;
   amount: number;
+  percent: number;
 };
 
 export function computeCategoryBreakdown(
@@ -17,8 +18,14 @@ export function computeCategoryBreakdown(
     );
   }
 
+  const grandTotal = [...totals.values()].reduce((sum, amount) => sum + amount, 0);
+
   return [...totals.entries()]
-    .map(([category, amount]) => ({ category, amount }))
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percent: grandTotal > 0 ? Math.round((amount / grandTotal) * 100) : 0,
+    }))
     .sort(
       (left, right) =>
         right.amount - left.amount ||

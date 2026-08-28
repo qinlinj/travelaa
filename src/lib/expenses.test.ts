@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { createEmptyLedger } from "@/lib/ledger-storage";
 import {
   addExpense,
+  customShareProgress,
   deleteExpense,
   sortExpensesNewestFirst,
+  toDateInputValue,
+  updateExpense,
   type ExpenseDraft,
 } from "@/lib/expenses";
 import type { Expense, Ledger, Member } from "@/types";
@@ -127,6 +130,87 @@ describe("addExpense", () => {
         },
       ],
     });
+  });
+});
+
+describe("updateExpense", () => {
+  it("replaces an existing expense in place and keeps the same id", () => {
+    const existing: Expense = {
+      id: "exp-1",
+      amount: 12,
+      description: "Coffee",
+      category: "Food",
+      date: "2026-08-20T00:00:00.000Z",
+      paidBy: "m1",
+      participants: ["m1"],
+      splitType: "equal",
+    };
+    const later: Expense = {
+      ...existing,
+      id: "exp-2",
+      description: "Taxi",
+      amount: 36,
+      category: "Transport",
+    };
+    const result = updateExpense(
+      ledgerWithMembers([existing, later]),
+      "exp-1",
+      validDraft({
+        amount: 48,
+        description: "Hotel",
+        category: "Accommodation",
+        date: "2026-08-21",
+        paidBy: "m2",
+        participants: ["m1", "m2"],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.expenses.map((item) => item.id)).toEqual(["exp-1", "exp-2"]);
+      expect(result.expenses[0]).toMatchObject({
+        id: "exp-1",
+        amount: 48,
+        description: "Hotel",
+        category: "Accommodation",
+        paidBy: "m2",
+        participants: ["m1", "m2"],
+      });
+    }
+  });
+
+  it("rejects an unknown expense id", () => {
+    expect(updateExpense(ledgerWithMembers(), "missing", validDraft())).toEqual({
+      ok: false,
+      error: "Expense not found.",
+    });
+  });
+});
+
+describe("customShareProgress", () => {
+  it("reports assigned, remaining, and whether shares are within tolerance", () => {
+    expect(
+      customShareProgress(96, { m1: "40", m2: "40" }, ["m1", "m2", "m3"]),
+    ).toEqual({
+      assigned: 80,
+      target: 96,
+      remaining: 16,
+      balanced: false,
+    });
+    expect(
+      customShareProgress(10, { m1: "5.004", m2: "5.004" }, ["m1", "m2"]),
+    ).toMatchObject({
+      assigned: 10.008,
+      target: 10,
+      balanced: true,
+    });
+  });
+});
+
+describe("toDateInputValue", () => {
+  it("turns a stored ISO date into a yyyy-mm-dd input value", () => {
+    expect(toDateInputValue("2026-08-28T00:00:00.000Z")).toBe("2026-08-28");
+    expect(toDateInputValue("2026-08-28")).toBe("2026-08-28");
   });
 });
 

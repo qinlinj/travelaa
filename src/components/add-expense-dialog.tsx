@@ -8,23 +8,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { Expense } from "@/types";
 
 type AddExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  expense?: Expense | null;
 };
 
-export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) {
+export function AddExpenseDialog({
+  open,
+  onOpenChange,
+  expense = null,
+}: AddExpenseDialogProps) {
+  const isEditing = Boolean(expense);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add expense</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit expense" : "Add expense"}</DialogTitle>
           <DialogDescription>
-            Record what was spent. It is saved on this device.
+            {isEditing
+              ? "Update this expense. Changes stay on this device."
+              : "Record what was spent. It is saved on this device."}
           </DialogDescription>
         </DialogHeader>
-        <ExpenseForm embedded onSaved={() => onOpenChange(false)} />
+        <ExpenseForm
+          key={expense?.id ?? "new-expense"}
+          embedded
+          expense={expense}
+          onSaved={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );

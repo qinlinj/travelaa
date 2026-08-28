@@ -20,16 +20,64 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { todayInputValue, type ExpenseDraft } from "@/lib/expenses";
+import {
+  customShareProgress,
+  todayInputValue,
+  toDateInputValue,
+  type ExpenseDraft,
+} from "@/lib/expenses";
+import { formatAmount } from "@/lib/format";
 import { useLedgerStore } from "@/store/ledger-store";
-import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/types";
+import { EXPENSE_CATEGORIES, type Expense, type ExpenseCategory } from "@/types";
 
 type ExpenseFormProps = {
   embedded?: boolean;
+  expense?: Expense | null;
   onSaved?: () => void;
 };
 
-export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
+function formStateFromExpense(expense: Expense | null) {
+  if (!expense) {
+    return {
+      amount: "",
+      description: "",
+      category: "Food" as ExpenseCategory,
+      date: todayInputValue(),
+      paidBy: null as string | null,
+      participants: null as string[] | null,
+      splitType: "equal" as ExpenseDraft["splitType"],
+      customShares: {} as Record<string, string>,
+      receiptUrl: undefined as string | undefined,
+      receiptName: null as string | null,
+    };
+  }
+
+  return {
+    amount: String(expense.amount),
+    description: expense.description,
+    category: EXPENSE_CATEGORIES.includes(expense.category as ExpenseCategory)
+      ? (expense.category as ExpenseCategory)
+      : ("Other" as ExpenseCategory),
+    date: toDateInputValue(expense.date),
+    paidBy: expense.paidBy,
+    participants: expense.participants,
+    splitType: expense.splitType,
+    customShares: Object.fromEntries(
+      Object.entries(expense.customShares ?? {}).map(([id, value]) => [
+        id,
+        String(value),
+      ]),
+    ),
+    receiptUrl: expense.receiptUrl,
+    receiptName: expense.receiptUrl ? "Attached image" : null,
+  };
+}
+
+export function ExpenseForm({
+  embedded = false,
+  expense = null,
+  onSaved,
+}: ExpenseFormProps) {
   const errorId = useId();
   const amountId = useId();
   const descriptionId = useId();
@@ -39,16 +87,29 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
   const members = useLedgerStore((state) => state.ledger.members);
   const hydrate = useLedgerStore((state) => state.hydrate);
   const addExpense = useLedgerStore((state) => state.addExpense);
+  const updateExpense = useLedgerStore((state) => state.updateExpense);
 
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<ExpenseCategory>("Food");
-  const [date, setDate] = useState(todayInputValue);
-  const [paidBy, setPaidBy] = useState<string | null>(null);
-  const [participants, setParticipants] = useState<string[] | null>(null);
-  const [splitType, setSplitType] = useState<ExpenseDraft["splitType"]>("equal");
-  const [customShares, setCustomShares] = useState<Record<string, string>>({});
-  const [receiptUrl, setReceiptUrl] = useState<string | undefined>();
+  const initial = formStateFromExpense(expense);
+  const [amount, setAmount] = useState(initial.amount);
+  const [description, setDescription] = useState(initial.description);
+  const [category, setCategory] = useState<ExpenseCategory>(initial.category);
+  const [date, setDate] = useState(initial.date);
+  const [paidBy, setPaidBy] = useState<string | null>(initial.paidBy);
+  const [participants, setParticipants] = useState<string[] | null>(
+    initial.participants,
+  );
+  const [splitType, setSplitType] = useState<ExpenseDraft["splitType"]>(
+    initial.splitType,
+  );
+  const [customShares, setCustomShares] = useState<Record<string, string>>(
+    initial.customShares,
+  );
+  const [receiptUrl, setReceiptUrl] = useState<string | undefined>(
+    initial.receiptUrl,
+  );
+  const [receiptName, setReceiptName] = useState<string | null>(
+    initial.receiptName,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,17 +127,12 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
           members.some((member) => member.id === id),
         );
 
-  function resetForm() {
-    setAmount("");
-    setDescription("");
-    setCategory("Food");
-    setDate(todayInputValue());
-    setSplitType("equal");
-    setCustomShares({});
-    setReceiptUrl(undefined);
-    setPaidBy(null);
-    setParticipants(null);
-  }
+  const shareProgress = customShareProgress(
+    amount,
+    customShares,
+    resolvedParticipants,
+  );
+  const customBlocked = splitType === "custom" && !shareProgress.balanced;
 
   function toggleParticipant(memberId: string) {
     const next = resolvedParticipants.includes(memberId)
@@ -89,6 +145,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
     const file = event.target.files?.[0];
     if (!file) {
       setReceiptUrl(undefined);
+      setReceiptName(null);
       return;
     }
 
@@ -98,6 +155,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
       return;
     }
 
+    setReceiptName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -110,7 +168,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextError = addExpense({
+    const draft: ExpenseDraft = {
       amount,
       description,
       category,
@@ -120,17 +178,23 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
       splitType,
       customShares,
       receiptUrl,
-    });
+    };
+
+    const nextError = expense
+      ? updateExpense(expense.id, draft)
+      : addExpense(draft);
     setError(nextError);
 
     if (!nextError) {
-      resetForm();
-      event.currentTarget.reset();
       onSaved?.();
     }
   }
 
-  const canSubmit = members.length > 0;
+  const canSubmit = members.length > 0 && !customBlocked;
+  const remainingLabel =
+    shareProgress.remaining >= 0
+      ? `${formatAmount(shareProgress.remaining)} left`
+      : `${formatAmount(Math.abs(shareProgress.remaining))} over`;
 
   const form = (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -147,6 +211,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
               onChange={(event) => setAmount(event.target.value)}
               placeholder="0.00"
               required
+              className="min-h-11"
             />
           </div>
 
@@ -159,6 +224,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Dinner, taxi, tickets..."
               required
+              className="min-h-11"
             />
           </div>
 
@@ -168,7 +234,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
               value={category}
               onValueChange={(value) => setCategory(value as ExpenseCategory)}
             >
-              <SelectTrigger id="category" className="w-full">
+              <SelectTrigger id="category" className="min-h-11 w-full">
                 <SelectValue placeholder="Choose a category" />
               </SelectTrigger>
               <SelectContent>
@@ -190,6 +256,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
               value={date}
               onChange={(event) => setDate(event.target.value)}
               required
+              className="min-h-11"
             />
           </div>
 
@@ -198,9 +265,9 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
             <Select
               value={resolvedPaidBy || undefined}
               onValueChange={setPaidBy}
-              disabled={!canSubmit}
+              disabled={!canSubmit && members.length === 0}
             >
-              <SelectTrigger id="paidBy" className="w-full">
+              <SelectTrigger id="paidBy" className="min-h-11 w-full">
                 <SelectValue placeholder="Add a member first" />
               </SelectTrigger>
               <SelectContent>
@@ -215,6 +282,30 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
 
           <fieldset className="flex flex-col gap-2">
             <legend className="text-sm font-medium">Participants</legend>
+            {members.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() =>
+                    setParticipants(members.map((member) => member.id))
+                  }
+                >
+                  Select all
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => setParticipants([])}
+                >
+                  Select none
+                </Button>
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {members.map((member) => {
                 const selected = resolvedParticipants.includes(member.id);
@@ -223,6 +314,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
                     key={member.id}
                     type="button"
                     size="sm"
+                    className="min-h-11"
                     variant={selected ? "default" : "outline"}
                     aria-pressed={selected}
                     onClick={() => toggleParticipant(member.id)}
@@ -256,6 +348,14 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
 
           {splitType === "custom" ? (
             <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                Assigned{" "}
+                {formatAmount(shareProgress.assigned)} of{" "}
+                {shareProgress.target === null
+                  ? "$—"
+                  : formatAmount(shareProgress.target)}{" "}
+                · {remainingLabel}
+              </p>
               {resolvedParticipants.map((participantId) => {
                 const member = members.find((item) => item.id === participantId);
                 if (!member) {
@@ -281,6 +381,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
                         }))
                       }
                       placeholder="0.00"
+                      className="min-h-11"
                     />
                   </div>
                 );
@@ -290,13 +391,27 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor={receiptId}>Receipt (optional)</Label>
-            <Input
+            <input
               id={receiptId}
               name="receipt"
               type="file"
               accept="image/*"
               onChange={handleReceiptChange}
+              className="sr-only"
             />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11"
+                onClick={() => document.getElementById(receiptId)?.click()}
+              >
+                {receiptUrl ? "Replace image" : "Attach image"}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {receiptName ?? "JPG or PNG"}
+              </span>
+            </div>
             {receiptUrl ? (
               // Data-URL preview is local-only; next/image cannot optimize it.
               // eslint-disable-next-line @next/next/no-img-element
@@ -314,8 +429,12 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
             </p>
           ) : null}
 
-          <Button type="submit" className="w-full sm:w-auto" disabled={!canSubmit}>
-            Save expense
+          <Button
+            type="submit"
+            className="min-h-11 w-full sm:w-auto"
+            disabled={!canSubmit}
+          >
+            {expense ? "Save changes" : "Save expense"}
           </Button>
         </form>
   );
@@ -327,7 +446,7 @@ export function ExpenseForm({ embedded = false, onSaved }: ExpenseFormProps) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Add expense</CardTitle>
+        <CardTitle>{expense ? "Edit expense" : "Add expense"}</CardTitle>
         <CardDescription>
           Record what was spent. It is saved on this device.
         </CardDescription>

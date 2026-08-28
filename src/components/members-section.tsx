@@ -13,13 +13,67 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useLedgerStore } from "@/store/ledger-store";
+
+function MemberForm({
+  name,
+  setName,
+  error,
+  errorId,
+  inputId,
+  onSubmit,
+  autoFocus = false,
+}: {
+  name: string;
+  setName: (value: string) => void;
+  error: string | null;
+  errorId: string;
+  inputId: string;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <form className="flex flex-col gap-3" onSubmit={onSubmit}>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={inputId}>Member name</Label>
+        <Input
+          id={inputId}
+          name="memberName"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="e.g. Alex"
+          autoComplete="off"
+          autoFocus={autoFocus}
+          className="min-h-11"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : undefined}
+        />
+      </div>
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <Button type="submit" className="min-h-11 w-full">
+        Add member
+      </Button>
+    </form>
+  );
+}
 
 export function MembersSection() {
   const inputId = useId();
   const errorId = useId();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const members = useLedgerStore((state) => state.ledger.members);
   const isHydrated = useLedgerStore((state) => state.isHydrated);
@@ -45,69 +99,109 @@ export function MembersSection() {
     setError(removeMember(memberId));
   }
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Members</CardTitle>
-        <CardDescription>
-          Add or remove people on this trip. No login is required.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={inputId}>Member name</Label>
-            <Input
-              id={inputId}
-              name="memberName"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Alex"
-              autoComplete="off"
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? errorId : undefined}
-            />
-          </div>
-          {error ? (
-            <p id={errorId} className="text-sm text-destructive" role="alert">
-              {error}
+  const form = (
+    <MemberForm
+      name={name}
+      setName={setName}
+      error={error}
+      errorId={errorId}
+      inputId={inputId}
+      onSubmit={handleSubmit}
+    />
+  );
+
+  if (!isHydrated) {
+    return null;
+  }
+
+  if (members.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Add people</CardTitle>
+          <CardDescription>
+            Start with names. No login is required.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {form}
+          {isHydrated ? (
+            <p className="text-sm text-muted-foreground">
+              Add the first person on this trip.
             </p>
           ) : null}
-          <Button type="submit" className="min-h-11 w-full sm:w-auto">
-            Add member
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <section
+        aria-labelledby="members-heading"
+        className="flex flex-col gap-2"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="members-heading" className="text-sm font-medium">
+            People
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            onClick={() => setSheetOpen(true)}
+          >
+            Manage
           </Button>
-        </form>
+        </div>
+        <ul className="flex flex-wrap gap-2">
+          {members.map((member) => (
+            <li
+              key={member.id}
+              className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3 text-sm font-medium"
+            >
+              {member.name}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        <Separator />
-
-        {isHydrated && members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No members yet. Add the first person on this trip.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {members.map((member) => (
-              <li
-                key={member.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
-              >
-                <span className="min-w-0 truncate font-medium">
-                  {member.name}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-h-11 px-4"
-                  onClick={() => handleRemove(member.id)}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[85svh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Members</SheetTitle>
+            <SheetDescription>
+              Add or remove people on this trip. No login is required.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 px-4 pb-6">
+            {form}
+            <Separator />
+            <ul className="flex flex-col gap-2">
+              {members.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
                 >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                  <span className="min-w-0 truncate font-medium">
+                    {member.name}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11 px-4"
+                    onClick={() => handleRemove(member.id)}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

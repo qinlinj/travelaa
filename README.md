@@ -2,7 +2,7 @@
 
 TravelAA is a group travel expense splitter. Friends add a trip ledger, record who paid for what, and see who is ahead or behind.
 
-SplitViz is the settlement view. Most split apps only list a final “who pays whom.” TravelAA also shows the **before** path (a naive, busy set of transfers) next to the **after** path (a greedy simplification). The headline is how many transactions you removed: *Transactions reduced from X to Y*.
+SplitViz is the settlement view. Most split apps only list a final “who pays whom.” TravelAA also shows the **before** path (a naive set of transfers) next to the **after** path (a greedy simplification). The headline says *Transactions reduced from X to Y* only when the count actually drops.
 
 All data stays in the browser (`localStorage`). There is no login and no backend.
 
@@ -14,8 +14,8 @@ All data stays in the browser (`localStorage`). There is no login and no backend
 - Equal split or custom per-person shares
 - Optional on-device receipt preview (stored as a data URL)
 - Per-member Paid / Should pay / Net balances
-- Category spend overview (bar chart)
-- Settlement page with before/after path visualization
+- Category spend overview with labeled bars
+- Settlement page with before/after transfer rows
 - Optimal transfer list after simplification
 - Works offline after the first load; no environment variables required
 
@@ -24,8 +24,7 @@ All data stays in the browser (`localStorage`). There is no login and no backend
 - Next.js (App Router) + TypeScript
 - Tailwind CSS + shadcn/ui
 - Zustand + `localStorage` persistence
-- Recharts (category overview)
-- SVG node-link diagram (settlement paths)
+- Labeled category bars and settlement transfer rows
 - Vitest for unit tests
 
 ## Run locally

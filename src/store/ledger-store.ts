@@ -15,6 +15,7 @@ import {
 import {
   addExpense as addExpenseToLedger,
   deleteExpense as deleteExpenseFromLedger,
+  updateExpense as updateExpenseInLedger,
   type ExpenseDraft,
 } from "@/lib/expenses";
 import {
@@ -31,6 +32,7 @@ export type LedgerStore = {
   addMember: (name: string) => string | null;
   removeMember: (memberId: string) => string | null;
   addExpense: (draft: ExpenseDraft) => string | null;
+  updateExpense: (expenseId: string, draft: ExpenseDraft) => string | null;
   deleteExpense: (expenseId: string) => string | null;
   replaceMembers: (members: Member[]) => void;
   replaceExpenses: (expenses: Expense[]) => void;
@@ -78,6 +80,17 @@ export function createLedgerStore(
     },
     addExpense(draft) {
       const result = addExpenseToLedger(get().ledger, draft);
+      if (!result.ok) {
+        return result.error;
+      }
+
+      const ledger = { ...get().ledger, expenses: result.expenses };
+      saveLedger(ledger, storage);
+      set({ ledger });
+      return null;
+    },
+    updateExpense(expenseId, draft) {
+      const result = updateExpenseInLedger(get().ledger, expenseId, draft);
       if (!result.ok) {
         return result.error;
       }

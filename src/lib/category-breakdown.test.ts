@@ -29,8 +29,8 @@ describe("computeCategoryBreakdown", () => {
         expense("Food", 8, "c"),
       ]),
     ).toEqual([
-      { category: "Transport", amount: 40 },
-      { category: "Food", amount: 20 },
+      { category: "Transport", amount: 40, percent: 67 },
+      { category: "Food", amount: 20, percent: 33 },
     ]);
   });
 });
